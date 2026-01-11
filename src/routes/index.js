@@ -11,5 +11,8 @@ router.get('/', (req, res) => {
 router.use('/admin', authRoutes);
 // Admin routes (protected)
 router.use('/admin', adminRoutes);
+// Admin settings routes (protected)
+const settingsRoutes = require('./settings');
+router.use('/admin/settings', settingsRoutes);
 
 module.exports = router;

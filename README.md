@@ -45,6 +45,52 @@ Next step (awaiting your confirmation): Create Express server routes, connect to
 - Errors:
   - 401: { "error": "Missing Authorization header" }
   - 401: { "error": "Invalid or expired token" }
+  - 401: { "error": "Invalid token: admin not found" }
+
+3) Protected test route
+- Endpoint: `GET /api/v1/admin/protected`
+- Headers:
+  - `Authorization: Bearer <jwt-token>`
+- Success (200):
+  {
+    "ok": true,
+    "message": "Protected route access granted",
+    "admin": { "id": "<id>", "email": "admin@example.com" }
+  }
+- Errors: same as `/admin/me`
+
+4) Admin Settings (protected)
+- GET current settings
+  - Endpoint: `GET /api/v1/admin/settings`
+  - Headers:
+    - `Authorization: Bearer <jwt-token>`
+  - Success (200):
+    {
+      "settings": {
+        "_id": "<id>",
+        "siteTitle": "ElectroMart",
+        "contactEmail": "admin@example.com",
+        "supportEmail": "admin@example.com",
+        "enableListings": true,
+        "defaultListingDurationDays": 30
+      }
+    }
+- PUT update settings
+  - Endpoint: `PUT /api/v1/admin/settings`
+  - Headers:
+    - `Content-Type: application/json`
+    - `Authorization: Bearer <jwt-token>`
+  - Body (example):
+    {
+      "siteTitle": "ElectroMart Admin",
+      "contactEmail": "support@electromart.example.com",
+      "enableListings": false,
+      "defaultListingDurationDays": 60
+    }
+  - Success (200):
+    {
+      "settings": { "_id": "<id>", "siteTitle": "ElectroMart Admin", ... }
+    }
 
 ## Seeding an Admin
 - Set `MONGO_URI`, `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your local `.env`.
