@@ -15,4 +15,12 @@ router.use('/admin', adminRoutes);
 const settingsRoutes = require('./settings');
 router.use('/admin/settings', settingsRoutes);
 
+// Admin vendor management (protected)
+const vendorRoutes = require('./vendors');
+router.use('/admin/vendors', vendorRoutes);
+
+// Admin subscription plans (protected)
+const plansRoutes = require('./plans');
+router.use('/admin/plans', plansRoutes);
+
 module.exports = router;

@@ -92,20 +92,72 @@ Next step (awaiting your confirmation): Create Express server routes, connect to
       "settings": { "_id": "<id>", "siteTitle": "ElectroMart Admin", ... }
     }
 
-## Seeding an Admin
-- Set `MONGO_URI`, `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your local `.env`.
-- Run: `npm run seed` (this will create the admin if it doesn't exist).
+5) Vendor management (admin-only)
+- List vendors
+  - Endpoint: `GET /api/v1/admin/vendors`
+  - Query params (optional): `status` (pending|approved|rejected|blocked), `page`, `limit`, `q` (search)
+  - Headers:
+    - `Authorization: Bearer <jwt-token>`
+  - Success (200):
+    {
+      "vendors": [ { "_id": "<id>", "name": "Vendor A", "email": "v@a.com", "status": "pending" } ],
+      "meta": { "total": 1, "page": 1, "limit": 20 }
+    }
+- Update vendor status (approve / reject / block)
+  - Endpoint: `PUT /api/v1/admin/vendors/:id/status`
+  - Headers:
+    - `Content-Type: application/json`
+    - `Authorization: Bearer <jwt-token>`
+  - Body (example - approve):
+    { "status": "approved" }
+  - Body (example - reject):
+    { "status": "rejected", "reason": "Missing documents" }
+  - Success (200):
+    { "vendor": { "_id": "<id>", "name": "Vendor A", "status": "approved" } }
+  - Errors:
+    - 400: { "error": "Invalid status" }
+    - 404: { "error": "Vendor not found" }
 
-## Troubleshooting MongoDB connection issues
-If you see errors like "buffering timed out" or "Operation `admins.findOne()` buffering timed out" or a timeout stack trace:
+6) Subscription Plans (admin-only)
+- Create plan
+  - Endpoint: `POST /api/v1/admin/plans`
+  - Headers:
+    - `Content-Type: application/json`
+    - `Authorization: Bearer <jwt-token>`
+  - Body (example):
+    {
+      "name": "Basic",
+      "description": "Basic plan",
+      "productLimit": 50,
+      "durationDays": 30,
+      "price": 9.99,
+      "currency": "USD",
+      "active": true
+    }
+  - Success (201):
+    { "plan": { "_id": "<id>", "slug": "basic", "name": "Basic", "price": 9.99 } }
 
-- Check your `MONGO_URI` in `.env` for correctness:
-  - Ensure the database username and password are correct.
-  - If the password contains special characters (e.g. `@`, `:`), URL-encode it using `encodeURIComponent`.
-  - For example: `mongodb+srv://user:encodeURIComponent(password)@cluster.../dbname`.
-- If using Atlas, ensure your IP is allowed in the Network Access / IP whitelist (or add `0.0.0.0/0` for testing).
-- Verify DNS resolution for `mongodb+srv://` URIs (Internet access required).
-- Test connectivity locally with `mongosh <your-uri>` or a simple Node script that calls `mongoose.connect`.
-- The code has a 10s server selection timeout; if your network is slow temporarily, increase `serverSelectionTimeoutMS` in `src/config/db.js`.
+- List plans
+  - Endpoint: `GET /api/v1/admin/plans`
+  - Query params: `active`, `page`, `limit`, `q`
+  - Headers:
+    - `Authorization: Bearer <jwt-token>`
+  - Success (200):
+    {
+      "plans": [ { "_id": "<id>", "name": "Free", "slug": "free", "price": 0 } ],
+      "meta": { "total": 3, "page": 1, "limit": 20 }
+    }
 
-If you want, share the (redacted) `MONGO_URI` (replace actual password with `<PASSWORD>`) and I can help spot issues.
+- Get plan
+  - Endpoint: `GET /api/v1/admin/plans/:id`
+  - Headers: `Authorization: Bearer <jwt-token>`
+  - Success (200): { "plan": { ... } }
+
+- Update plan
+  - Endpoint: `PUT /api/v1/admin/plans/:id`
+  - Body: any of name, description, productLimit, durationDays, price, currency, active
+  - Success (200): { "plan": { ... } }
+
+- Delete plan (soft-delete -> sets active=false)
+  - Endpoint: `DELETE /api/v1/admin/plans/:id`
+  - Success (200): { "plan": { "active": false } }
