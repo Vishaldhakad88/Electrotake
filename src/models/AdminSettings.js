@@ -6,7 +6,9 @@ const AdminSettingsSchema = new mongoose.Schema(
     contactEmail: { type: String, default: '' },
     supportEmail: { type: String, default: '' },
     enableListings: { type: Boolean, default: true },
-    defaultListingDurationDays: { type: Number, default: 30 }
+    defaultListingDurationDays: { type: Number, default: 30 },
+    // Number of products allowed for vendors without an active subscription
+    freeProductLimit: { type: Number, default: 5 }
   },
   { timestamps: true }
 );

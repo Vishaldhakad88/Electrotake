@@ -161,3 +161,33 @@ Next step (awaiting your confirmation): Create Express server routes, connect to
 - Delete plan (soft-delete -> sets active=false)
   - Endpoint: `DELETE /api/v1/admin/plans/:id`
   - Success (200): { "plan": { "active": false } }
+
+7) Vendor product creation enforcement (admin-proxied)
+- Seed vendor & subscription (local testing)
+  - Create a vendor (seed): `npm run seed-vendor` (creates `vendor@example.com` - approved)
+  - Seed plans: `npm run seed-plans` (Free/Basic/Pro)
+  - Create a subscription for the vendor: `npm run seed-vendor-subscriptions`
+
+- Create product for vendor (enforced)
+  - Endpoint: `POST /api/v1/admin/vendors/:vendorId/products`
+  - Headers:
+    - `Content-Type: application/json`
+    - `Authorization: Bearer <jwt-token>`
+  - Body (example):
+    { "title": "My new product", "description": "..." }
+  - Success (201): { "product": { "_id": "<id>", "vendor": "<vendorId>", "title": "My new product" } }
+  - Limit exceeded (403):
+    { "error": "Product limit exceeded", "limit": 5, "currentCount": 5 }
+  - Vendor not approved (403): { "error": "Vendor is not approved" }
+
+- List vendor products (for testing)
+  - Endpoint: `GET /api/v1/admin/vendors/:vendorId/products`
+  - Headers:
+    - `Authorization: Bearer <jwt-token>`
+  - Success (200): { "products": [ ... ], "total": 3 }
+
+Notes:
+- The helper `canVendorCreateProduct(vendorId)` returns `{ allowed, limit, currentCount, reason }` and is used by the product creation endpoint to enforce limits.
+- If there is an active subscription for the vendor, the plan's `productLimit` applies; otherwise the `AdminSettings.freeProductLimit` is used (default 5).
+- Vendors must be `approved` to create products and `blocked` vendors are blocked from creating products.
+

@@ -19,6 +19,10 @@ router.use('/admin/settings', settingsRoutes);
 const vendorRoutes = require('./vendors');
 router.use('/admin/vendors', vendorRoutes);
 
+// Mount product routes under vendor path: /api/v1/admin/vendors/:vendorId/products
+const productRoutes = require('./products');
+router.use('/admin/vendors/:vendorId/products', productRoutes);
+
 // Admin subscription plans (protected)
 const plansRoutes = require('./plans');
 router.use('/admin/plans', plansRoutes);
