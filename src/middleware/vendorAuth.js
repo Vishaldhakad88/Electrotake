@@ -3,17 +3,17 @@ const Vendor = require('../models/Vendor');
 
 async function vendorAuth(req, res, next) {
   const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  if (!auth || !auth.startsWith('Bearer ')) return res.status(401).json({ error: 'Authorization header missing or malformed' });
 
   const token = auth.split(' ')[1];
   let decoded;
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
 
-  if (decoded.role !== 'vendor' || !decoded.vendorId) return res.status(403).json({ error: 'Forbidden' });
+  if (decoded.role !== 'vendor' || !decoded.vendorId) return res.status(403).json({ error: 'Forbidden: token role is not vendor' });
 
   const vendor = await Vendor.findById(decoded.vendorId).select('-password -emailOtp -emailOtpExpires');
   if (!vendor) return res.status(401).json({ error: 'Vendor not found' });

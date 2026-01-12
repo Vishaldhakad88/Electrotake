@@ -19,9 +19,17 @@ router.use('/admin/settings', settingsRoutes);
 const vendorRoutes = require('./vendors');
 router.use('/admin/vendors', vendorRoutes);
 
-// Public vendor routes (signup/login/verify)
+// Public vendor routes (login/profile/set-password)
 const vendorPublicRoutes = require('./vendor');
 router.use('/vendor', vendorPublicRoutes);
+
+// Public vendor request routes (submit request + verify OTP)
+const vendorRequestRoutes = require('./vendorRequests');
+router.use('/vendor-requests', vendorRequestRoutes);
+
+// Admin vendor-request management (review/approve/reject)
+const adminVendorRequestRoutes = require('./adminVendorRequests');
+router.use('/admin/vendor-requests', adminVendorRequestRoutes);
 
 // Mount product routes under vendor path: /api/v1/admin/vendors/:vendorId/products
 const productRoutes = require('./products');

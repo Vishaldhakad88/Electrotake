@@ -191,36 +191,77 @@ Notes:
 - If there is an active subscription for the vendor, the plan's `productLimit` applies; otherwise the `AdminSettings.freeProductLimit` is used (default 5).
 - Vendors must be `approved` to create products and `blocked` vendors are blocked from creating products.
 
-8) Vendor Signup & Email Verification (backend only)
-- Vendor Signup
-  - Endpoint: `POST /api/v1/vendor/signup`
+8) Vendor Request & Email Verification (backend only)
+- Submit Vendor Request
+  - Endpoint: `POST /api/v1/vendor-requests`
   - Headers: `Content-Type: application/json`
   - Body (example):
     {
-      "name": "Vendor One",
-      "email": "vendor1@example.com",
+      "email": "vendor@example.com",
       "phone": "9876543210",
-      "description": "My vendor",
-      "password": "SecurePass123!"
+      "location": "Indore",
+      "description": "Mobile & electronics shop",
+      "category": "electronics"
     }
-  - Success (201): { "message": "Signup successful. Verify email with OTP sent to the provided email." }
-  - Errors:
-    - 400: { "error": "Name, email and password are required" }
-    - 400: { "error": "Email already registered" }
-    - 403: { "error": "This email is blocked from registering" }
+  - Success (201): { "message": "Vendor request submitted. Verify email with OTP." }
+  - Notes: OTP printed to console in dev mode; request is created with `status: pending` and `emailVerified: false`.
 
-- Verify Email
-  - Endpoint: `POST /api/v1/vendor/verify-email`
+- Verify Vendor Request Email (OTP)
+  - Endpoint: `POST /api/v1/vendor-requests/verify-otp`
   - Headers: `Content-Type: application/json`
   - Body (example):
-    { "email": "vendor1@example.com", "otp": "123456" }
+    { "email": "vendor@example.com", "otp": "123456" }
   - Success (200): { "message": "Email verified successfully" }
   - Errors:
     - 400: { "error": "Email and otp are required" }
-    - 404: { "error": "Vendor not found" }
+    - 404: { "error": "Vendor request not found" }
     - 400: { "error": "OTP expired" }
     - 400: { "error": "Invalid OTP" }
 
 Notes:
-- OTP is stored on the vendor record (expires in 10 minutes by default) and sent via console log for now (mocked email).
+- Only verified requests appear in the admin review queue. OTP expires in `VENDOR_OTP_EXPIRES_MIN` minutes (default 10) and is printed to the console for development.
+
+- Set Vendor Password (first time)
+  - Endpoint: `POST /api/v1/vendor/set-password`
+  - Body: { "email": "vendor@example.com", "password": "StrongPassword@123" }
+  - Rules: Vendor must exist and be approved; password must not already be set.
+  - Success (200): { "message": "Password set successfully" }
+
+- Vendor Login
+  - Endpoint: `POST /api/v1/vendor/login`
+  - Body: { "email":"vendor@example.com", "password":"StrongPassword@123" }
+  - Rules: Vendor must be approved and password must be set.
+  - Success (200): { "token": "JWT_TOKEN" }
+  - Returned token payload contains: { vendorId, role: "vendor" }
+
+9) Vendor Profile (STEP-7C) — Backend only
+
+- GET Vendor Profile
+  - Endpoint: `GET /api/v1/vendor/profile`
+  - Headers: `Authorization: Bearer <vendor-token>`
+  - Success (200): { "vendor": { "_id": "<id>", "name": "V...", "email": "v@e.com", "profileImage": "/uploads/vendors/<file>", "shopImages": ["/uploads/vendors/<file>"], "profileCompleted": true } }
+  - Errors: 401/403 where token invalid or vendor not approved/blocked
+
+- UPDATE Vendor Profile (image upload)
+  - Endpoint: `PUT /api/v1/vendor/profile`
+  - Headers: `Authorization: Bearer <vendor-token>`
+  - Content-Type: multipart/form-data
+  - Fields (form-data):
+    - `name` (string)
+    - `description` (string)
+    - `profileImage` (file, single, required to complete profile)
+    - `shopImages` (file, multiple, optional)
+  - Constraints:
+    - Allowed types: `.jpg, .jpeg, .png, .webp`
+    - Max file size: 2MB per file
+  - Success (200): returns updated vendor object (excludes password & OTP fields)
+  - Invalid file type (400): { "error": "Invalid file type" }
+  - Large file (400): multer error returned, message will indicate file size
+  - If required fields (name + description + profileImage) absent, `profileCompleted` remains false
+
+Notes:
+- Images are stored locally under `/uploads/vendors/` and served at `/uploads/vendors/<file>`.
+- Only the vendor owner (from JWT) can update their profile. Admin tokens DO NOT work on vendor routes.
+- Product creation will later enforce `vendor.profileCompleted === true` in addition to `approved` and `emailVerified`.
+
 

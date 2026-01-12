@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Vendor = require('../models/Vendor');
+const VendorRequest = require('../models/VendorRequest');
 const fetch = require('node-fetch');
 
 (async () => {
@@ -9,37 +9,37 @@ const fetch = require('node-fetch');
 
     const email = 'signup-test@example.com';
     // cleanup old
-    await Vendor.deleteOne({ email });
+    await VendorRequest.deleteOne({ email });
 
-    // signup
-    const signupRes = await fetch('http://localhost:5000/api/v1/vendor/signup', {
+    // submit vendor request
+    const signupRes = await fetch('http://localhost:5000/api/v1/vendor-requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Signup Test', email, password: 'TestPass123!', phone: '1234567890' })
+      body: JSON.stringify({ email, phone: '1234567890', location: 'Indore', description: 'Test shop' })
     });
-    console.log('Signup status', signupRes.status, await signupRes.json());
+    console.log('Submit status', signupRes.status, await signupRes.json());
 
     // read OTP from DB (test-only script)
-    const vendor = await Vendor.findOne({ email });
-    if (!vendor) {
-      console.error('Vendor not found after signup');
+    const vr = await VendorRequest.findOne({ email });
+    if (!vr) {
+      console.error('VendorRequest not found after submit');
       process.exit(1);
     }
-    console.log('OTP (from DB, test only):', vendor.emailOtp);
+    console.log('OTP (from DB, test only):', vr.emailOtp);
 
     // verify
-    const verifyRes = await fetch('http://localhost:5000/api/v1/vendor/verify-email', {
+    const verifyRes = await fetch('http://localhost:5000/api/v1/vendor-requests/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp: vendor.emailOtp })
+      body: JSON.stringify({ email, otp: vr.emailOtp })
     });
     console.log('Verify status', verifyRes.status, await verifyRes.json());
 
     // verify again should give already verified
-    const verifyRes2 = await fetch('http://localhost:5000/api/v1/vendor/verify-email', {
+    const verifyRes2 = await fetch('http://localhost:5000/api/v1/vendor-requests/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp: vendor.emailOtp })
+      body: JSON.stringify({ email, otp: vr.emailOtp })
     });
     console.log('Verify again status', verifyRes2.status, await verifyRes2.json());
 
