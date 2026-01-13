@@ -42,7 +42,8 @@ app.use('/api/v1', routes);
 
 app.get('/', (req, res) => {
   res.status(200).send('Welcome to the ElectroMart Admin API');
-});
+}); 
+console.log('Root route configured in app.js');
 // =======================
 // Error handler
 // =======================
