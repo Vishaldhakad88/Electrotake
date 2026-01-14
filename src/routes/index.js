@@ -78,4 +78,9 @@ const chatRoutes = require('./chats');
 router.use('/chats', chatRoutes);
 
 
+// Admin chat monitoring
+const adminChatRoutes = require('./adminChats');
+router.use('/admin', adminChatRoutes);
+
+
 module.exports = router;

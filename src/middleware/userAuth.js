@@ -3,44 +3,32 @@ const User = require('../models/User');
 
 const userAuth = async (req, res, next) => {
   try {
-    // Get token from header
-    const token = req.headers.authorization?.startsWith('Bearer ')
-      ? req.headers.authorization.slice(7)
-      : null;
-
-    if (!token) {
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Missing Authorization header' });
     }
 
-    // Verify token
+    const token = auth.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Check role
     if (decoded.role !== 'user' || !decoded.userId) {
       return res.status(403).json({ error: 'Forbidden: Invalid user token' });
     }
 
-    // ✅ FETCH FULL USER DOCUMENT
-    const user = await User.findById(decoded.userId).select('-password');
+    // 🔥 IMPORTANT FIX
+    const user = await User.findById(decoded.userId).select('_id name email');
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    // ✅ ATTACH FULL USER DOC
-    req.user = user;
+    req.user = user; // now req.user._id exists ✅
 
-    // Update lastActiveAt (non-blocking)
+    // Update last active silently
     User.findByIdAndUpdate(user._id, { lastActiveAt: new Date() }).catch(() => {});
 
     next();
   } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Token expired' });
-    }
-    if (err.name === 'JsonWebTokenError') {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-    return res.status(401).json({ error: 'Authentication failed' });
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
 
