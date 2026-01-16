@@ -3,6 +3,10 @@ const router = express.Router();
 const authRoutes = require('./auth');
 const adminRoutes = require('./admin');
 
+const adminAnnouncements = require('./adminAnnouncements');
+const publicAnnouncements = require('./publicAnnouncements');
+
+
 router.get('/', (req, res) => {
   res.json({ service: 'ElectroMart Admin API', version: '1.0.0' });
 });
@@ -81,6 +85,14 @@ router.use('/chats', chatRoutes);
 // Admin chat monitoring
 const adminChatRoutes = require('./adminChats');
 router.use('/admin', adminChatRoutes);
+
+// Admin announcements management
+router.use('/admin/announcements', adminAnnouncements);
+router.use('/announcements', publicAnnouncements);
+
+// Public announcements
+// const announcementRoutes = require('./announcements');
+// router.use('/announcements', announcementRoutes);
 
 
 module.exports = router;
